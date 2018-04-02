@@ -16,16 +16,10 @@ setwd("C:/Users/ThomasBronsveld/Documents/Big Data/DataStorage/InvidAssignment")
 drv <- JDBC("com.mysql.jdbc.Driver", "C:/Users/ThomasBronsveld/Documents/Big Data/DataStorage/mysql-connector-java-5.1.45-bin.jar")
 conn <- dbConnect(drv, "jdbc:mysql://localhost/opdrachtstorage", "root", "Jikdepok12345@", useSSL=FALSE)
 
-
-
 getGenres <- "SELECT genre
               FROM genres"
 genres <- dbGetQuery(conn, getGenres)
 
-getAPIRatings <- function(){
-  
-}
-                          
 # Define UI for application that draws a histogram
 ui <- fluidPage(
    
@@ -50,7 +44,42 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-   
+  
+  getAPIRating <- reactive({
+    req(input$genres)
+    gemiddeldeScore <- 0
+    sqlString <- "SELECT title
+    FROM movies m INNER JOIN moviesgenre mg ON m.movieId = mg.movieId
+    WHERE mg.genreId = (SELECT g.genreId
+    FROM genres g
+    WHERE g.genre = '"
+    sqlString <- paste(paste(sqlString, select(input$genres), sep = ""), "')", sep = "")
+    
+    moviesDatabase <- dbGetQuery(conn, sqlString)
+    
+    listScores <- list()
+    for(i in 1:200){
+      test2 <- find_by_title(test$title[i])
+      listScores <- cbind(listScores, test2$imdbRating[1]) 
+      gemiddeldeScore <- mean(unlist(listScores))
+    }
+    return(gemiddeldeScore)
+  })
+  
+  getMovieLensRatings <- reactive({
+    req(input$genres)
+    gemiddeldeScore <- 0
+    sqlString <- "SELECT AVG(gemiddeldeRating)
+    FROM averageratings a INNER JOIN moviesgenre mg ON a.movieId = mg.movieId
+    WHERE mg.genreId = (SELECT g.genreId
+    FROM genres g
+    WHERE g.genre = '"
+    sqlString <- paste(paste(sqlString, select(input$genres), sep = ""), "')", sep = "")
+    
+    movieLensrating <- dbGetQuery(conn, sqlString)
+    gemiddeldeScore <- movieLensrating * 2
+    return(gemiddeldeScore)
+  })
    output$distPlot <- renderPlot({
       # generate bins based on input$bins from ui.R
       x    <- faithful[, 2] 
