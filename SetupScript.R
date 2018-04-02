@@ -44,7 +44,7 @@ createJointTable <- function(movieId, genreColumn){
     sqlString <- "SELECT genreId
                   FROM genres
                   WHERE genre = '"
-    paste(paste(sqlString, as.character(movieGenre[i]), sep = ""), "'", sep = "")
+    sqlString <- paste(paste(sqlString, as.character(movieGenre[i]), sep = ""), "'", sep = "")
     idGenre <- sqldf(sqlString, stringsAsFactors = FALSE)
     sqlUpdateQuery <- "INSERT INTO moviesgenre (movieId, genreId)
                        VALUES ('"
@@ -78,7 +78,7 @@ colnames(gemiddeldeRating)[2] <- "gemiddeldeRating"
 #Wegschrijven van de genome-tags csv. Aangezien hier alles al georderd is.
 dbWriteTable(conn,name="Movies", value= movies, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbWriteTable(conn,name="AverageRatings", value= gemiddeldeRating, append=FALSE, row.names=FALSE, overwrite=FALSE)
-
+dbWriteTable(conn,name="Genre", value= genres, append=FALSE, row.names=FALSE, overwrite=FALSE)
 
 
 
