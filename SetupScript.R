@@ -17,12 +17,14 @@ drv <- JDBC("com.mysql.jdbc.Driver", "C:/Users/ThomasBronsveld/Documents/Big Dat
 
 #De connectie
 conn <- dbConnect(drv, "jdbc:mysql://localhost/opdrachtstorage", "root", "Jikdepok12345@", useSSL=FALSE)
+getGenres <- "SELECT genre
+              FROM genres"
+genres <- dbSendQuery(conn, getGenres)
 #Lees alle csv's in.
 listTables <- dbListTables(conn)
 
 movies <- read.csv("movies.csv") #done
 ratings <- read.csv("ratings.csv") #Done
-
 
 genres <- data.frame(unique(unlist(strsplit(as.character(movies$genres),'\\|'))))
 genres$genreId <- 1:nrow(genres)
@@ -57,6 +59,8 @@ createJointTable <- function(movieId, genreColumn){
 for (i in movies$movieId) {
   createJointTable(movies$movieId[i], unlist(strsplit(as.character(movies$genres[i]), '\\|')))
 }
+
+movies$title<-paste0(substr(movies$title,1,nchar(as.character(movies$title))-6))
 
 sqlStringMovies <- "SELECT movieId, title
                       FROM movies"
