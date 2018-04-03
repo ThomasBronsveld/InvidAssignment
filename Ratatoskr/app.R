@@ -43,19 +43,33 @@ genres <- dbGetQuery(conn, getGenres)
 #   return(dataFrame2)
 # }
 
-#Deze functie 
-
+#
+# This function retrieves the average score given to a genre from the Kaggle dataset.
+#
+#@Param genreKaggle. Default is set to Adventure as it is the first genre given in the resultset.
+#
 getKaggleRatings <- function(genreKaggle = "Adventure"){
+  
   sqlStringKaggle <- "SELECT AVG(vote_average)
                       FROM movieskaggle
                       WHERE genres LIKE '%"
+  
   sqlStringKaggle <- paste(paste(sqlStringKaggle, genreKaggle, sep = ""), "%'", sep = "")
+  
   resultKaggle <- dbGetQuery(conn, sqlStringKaggle)
+  
   databaseNaam <- "Kaggle"
+  
   databaseScorekaggle <- data.frame(databaseNaam, resultKaggle)
+  
   return(databaseScorekaggle)
 }
 
+#
+# This function retrieves the average score given to a genre from the movielens Dataset.
+#
+#@Param genre. Default is set to Adventure as it is the first genre given in the resultset.
+#
 getMovieLensRatings <- function(genre = "Adventure"){
   
   sqlString <- "SELECT AVG(gemiddeldeRating)
@@ -63,11 +77,17 @@ getMovieLensRatings <- function(genre = "Adventure"){
                 WHERE mg.genreId = (SELECT g.genreId
                 FROM genres g
                 WHERE g.genre = '"
+  
   sqlString <- paste(paste(sqlString, genre, sep = ""), "')", sep = "")
+  
   movieLensrating <- dbGetQuery(conn, sqlString)
+  
   gemiddeldeScore <- as.list(movieLensrating * 2)
+  
   databaseNaam <- "Movielens"
+  
   databaseScore <- data.frame(databaseNaam, gemiddeldeScore)
+  
   return(databaseScore)
 }
 

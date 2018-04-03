@@ -27,10 +27,11 @@ moviesKaggleSQLString <- "SELECT id, title, vote_average
                           FROM moviesKaggle"
 moviesKraggleDB <- sqldf(moviesKaggleSQLString, stringsAsFactors = FALSE)
 
-
+#genre values are given as Adventure|Comedy etc
 genres <- data.frame(unique(unlist(strsplit(as.character(movies$genres),'\\|'))))
 genres$genreId <- 1:nrow(genres)
 colnames(genres)[1] <- "genre"
+dbWriteTable(conn,name="Genre", value= genres, append=FALSE, row.names=FALSE, overwrite=FALSE)
 
 movies <- sqldf(moviesSQLString, stringsAsFactors = FALSE)
 
@@ -128,7 +129,6 @@ colnames(gemiddeldeRating)[2] <- "gemiddeldeRating"
 #Wegschrijven van de genome-tags csv. Aangezien hier alles al georderd is.
 dbWriteTable(conn,name="Movies", value= movies, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbWriteTable(conn,name="AverageRatings", value= gemiddeldeRating, append=FALSE, row.names=FALSE, overwrite=FALSE)
-dbWriteTable(conn,name="Genre", value= genres, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbWriteTable(conn,name="MoviesKaggle", value = moviesKraggleDB, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbWriteTable(conn,name="MoviesKaggleTest", value = moviesKaggle, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbDisconnect(conn)
