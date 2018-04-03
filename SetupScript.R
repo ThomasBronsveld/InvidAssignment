@@ -32,22 +32,25 @@ genres <- data.frame(unique(unlist(strsplit(as.character(movies$genres),'\\|')))
 genres$genreId <- 1:nrow(genres)
 colnames(genres)[1] <- "genre"
 
-#Lees alle csv's in.
-listTables <- dbListTables(conn)
-
-
 movies <- sqldf(moviesSQLString, stringsAsFactors = FALSE)
+
+#
+listTables <- dbListTables(conn)
 createJointTable <- function(movieId, genreColumn){
+  #The genres are given in the genreColumn as following: Adventure|Comedy|Horror etc
   movieGenre <- unlist(strsplit(as.character(genreColumn),'\\|'))
   
+  #Create the table in the database if it doesn't exist. This is checked and done to make it easier to continue
+  #my code on a different laptop without having to setup the entire table again.
   if (!('moviesgenre' %in% listTables)){
     createTable <- "CREATE TABLE moviesgenre(
                     movieId INT,
                     genreId INT)"
     dbSendUpdate(conn, createTable)
   }
+  
   for(i in 1:length(movieGenre)){
-   if (is.na(movieGenre[i]) == TRUE){
+   if (is.na(movieGenre[i]) == TRUE){ #If the genre is NA, then the movie has no relevance to my research so I skip it. 
        next
    }
     sqlString <- "SELECT genreId
@@ -64,39 +67,39 @@ createJointTable <- function(movieId, genreColumn){
 }
 
 for (i in movies$movieId) {
-  createJointTable(movies$movieId[i], unlist(strsplit(as.character(movies$genres[i]), '\\|')))
+  createJointTable(movies$movieId[i], movies$genres[i])
 }
 
-createJointTableKaggle <- function(movieId){
-  minChar <- 2
-
-  if (!('movieskagglegenre' %in% listTables)){
-    createTable <- "CREATE TABLE movieskagglegenre(
-    movieId INT,
-    genreId INT)"
-    dbSendUpdate(conn, createTable)
-  }
-  for (i in 1:length(genres$genreId)){
-    sqlString2 <- "SELECT genre
-                     FROM genres
-                     WHERE genreId = '"
-    sqlString2 <-paste(paste(sqlString2, genres$genreId[i], sep = ""), "'", sep = "")
-    genreKaggle <- sqldf(sqlString2, stringsAsFactors = FALSE)
-    
-    #print(genreKaggle %in% moviesKaggle$genres[movieId] == TRUE)
-    if(genreKaggle %in% moviesKaggle$genres[movieId] == TRUE){
-      
-      sqlUpdateQuery <- "INSERT INTO moviesgenre (movieId, genreId)
-        VALUES ('"
-
-      sqlUpdateQuery <- paste(paste(sqlUpdateQuery, as.character(movieId), sep = ""), "', '", sep = "")
-
-      sqlUpdateQuery <-paste(paste(sqlUpdateQuery, as.character(genres$genreId[i]), sep = ""), "')", sep = "")
-      print("sqlUpdateQuery")
-      dbSendUpdate(conn = conn, statement = sqlUpdateQuery)
-    }
-  }
-}
+# createJointTableKaggle <- function(movieId){
+#   minChar <- 2
+# 
+#   if (!('movieskagglegenre' %in% listTables)){
+#     createTable <- "CREATE TABLE movieskagglegenre(
+#     movieId INT,
+#     genreId INT)"
+#     dbSendUpdate(conn, createTable)
+#   }
+#   for (i in 1:length(genres$genreId)){
+#     sqlString2 <- "SELECT genre
+#                      FROM genres
+#                      WHERE genreId = '"
+#     sqlString2 <-paste(paste(sqlString2, genres$genreId[i], sep = ""), "'", sep = "")
+#     genreKaggle <- sqldf(sqlString2, stringsAsFactors = FALSE)
+#     
+#     #print(genreKaggle %in% moviesKaggle$genres[movieId] == TRUE)
+#     if(genreKaggle %in% moviesKaggle$genres[movieId] == TRUE){
+#       
+#       sqlUpdateQuery <- "INSERT INTO moviesgenre (movieId, genreId)
+#         VALUES ('"
+# 
+#       sqlUpdateQuery <- paste(paste(sqlUpdateQuery, as.character(movieId), sep = ""), "', '", sep = "")
+# 
+#       sqlUpdateQuery <-paste(paste(sqlUpdateQuery, as.character(genres$genreId[i]), sep = ""), "')", sep = "")
+#       print("sqlUpdateQuery")
+#       dbSendUpdate(conn = conn, statement = sqlUpdateQuery)
+#     }
+#   }
+# }
 
 
 for (i in moviesKaggle$id) {
@@ -128,7 +131,7 @@ dbWriteTable(conn,name="AverageRatings", value= gemiddeldeRating, append=FALSE, 
 dbWriteTable(conn,name="Genre", value= genres, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbWriteTable(conn,name="MoviesKaggle", value = moviesKraggleDB, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbWriteTable(conn,name="MoviesKaggleTest", value = moviesKaggle, append=FALSE, row.names=FALSE, overwrite=FALSE)
-
+dbDisconnect(conn)
 
 
 
