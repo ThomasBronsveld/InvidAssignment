@@ -20,6 +20,49 @@ getGenres <- "SELECT genre
               FROM genres"
 genres <- dbGetQuery(conn, getGenres)
 
+# getAPIRatings <- function(genre = "Adventure"){
+#   print(genre)
+#   gemiddeldeScore <- 0
+#   sqlString <- "SELECT title
+#                 FROM movies m INNER JOIN moviesgenre mg ON m.movieId = mg.movieId
+#                 WHERE mg.genreId = (SELECT g.genreId
+#                                     FROM genres g
+#                                     WHERE g.genre = '"
+#   sqlString <- paste(paste(sqlString, genre, sep = ""), "')", sep = "")
+#   
+#   moviesDatabase <- dbGetQuery(conn, sqlString)
+#   
+#   listScores <- list()
+#   for(i in 1:length(moviesDatabase$title)){
+#     test2 <- find_by_title(moviesDatabase$title[i])
+#     listScores[[i]] <- test2$imdbRating[1]
+#   }
+#   gemiddeldeScore <- mean(unlist(listScores))
+#   databaseNaam2 <- "omdb"
+#   dataFrame2 <- data.frame(databaseNaam, gemiddeldeScore)
+#   return(dataFrame2)
+# }
+
+#Deze functie 
+
+
+getMovieLensRatings <- function(genre = "Adventure"){
+  gemiddeldeScore <- 0
+  sqlString <- "SELECT AVG(gemiddeldeRating)
+                FROM averageratings a INNER JOIN moviesgenre mg ON a.movieId = mg.movieId
+                WHERE mg.genreId = (SELECT g.genreId
+                FROM genres g
+                WHERE g.genre = '"
+  sqlString <- paste(paste(sqlString, genre, sep = ""), "')", sep = "")
+  
+  movieLensrating <- dbGetQuery(conn, sqlString)
+  gemiddeldeScore <- as.list(movieLensrating * 2)
+  databaseNaam <- "Movielens"
+  databaseScore <- data.frame(databaseNaam, gemiddeldeScore)
+  return(databaseScore)
+}
+
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
    
@@ -29,9 +72,10 @@ ui <- fluidPage(
    # Sidebar with a slider input for number of bins 
    sidebarLayout(
       sidebarPanel(
-         selectInput(inputId = "genres",
+         selectInput(inputId = "genres_var",
                      label = "genres:",
-                     choices = genres
+                     choices = genres,
+                     selected = "Adventure"
                      )
       ),
       
@@ -44,49 +88,21 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  
-  getAPIRating <- reactive({
-    req(input$genres)
-    gemiddeldeScore <- 0
-    sqlString <- "SELECT title
-    FROM movies m INNER JOIN moviesgenre mg ON m.movieId = mg.movieId
-    WHERE mg.genreId = (SELECT g.genreId
-    FROM genres g
-    WHERE g.genre = '"
-    sqlString <- paste(paste(sqlString, select(input$genres), sep = ""), "')", sep = "")
-    
-    moviesDatabase <- dbGetQuery(conn, sqlString)
-    
-    listScores <- list()
-    for(i in 1:200){
-      test2 <- find_by_title(test$title[i])
-      listScores <- cbind(listScores, test2$imdbRating[1]) 
-      gemiddeldeScore <- mean(unlist(listScores))
-    }
-    return(gemiddeldeScore)
+   
+  getTheRatings <- reactive({
+    #req(input$genres_var)
+    #genre <- get(input$genres)
+    #print(genre)
+    apiRating <- getAPIRatings()
+    databaseRating <- getMovieLensRatings()
+    test <- cbind(databaseRating, apiRating)
   })
   
-  getMovieLensRatings <- reactive({
-    req(input$genres)
-    gemiddeldeScore <- 0
-    sqlString <- "SELECT AVG(gemiddeldeRating)
-    FROM averageratings a INNER JOIN moviesgenre mg ON a.movieId = mg.movieId
-    WHERE mg.genreId = (SELECT g.genreId
-    FROM genres g
-    WHERE g.genre = '"
-    sqlString <- paste(paste(sqlString, select(input$genres), sep = ""), "')", sep = "")
-    
-    movieLensrating <- dbGetQuery(conn, sqlString)
-    gemiddeldeScore <- movieLensrating * 2
-    return(gemiddeldeScore)
-  })
-   output$distPlot <- renderPlot({
+  output$distPlot <- renderPlot({
       # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2] 
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white')
+      ggplot(data = getTheRatings(), aes(x =test$databaseNaam , y = test$gemiddeldeScore)) +
+        geom_bar(stat = "identity")+
+        labs(x = "De database", y = "De gemiddelde gegeven score")
    })
 }
 
