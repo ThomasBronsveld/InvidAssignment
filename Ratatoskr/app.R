@@ -29,9 +29,9 @@ genres <- dbGetQuery(conn, getGenres)
 #                                     FROM genres g
 #                                     WHERE g.genre = '"
 #   sqlString <- paste(paste(sqlString, genre, sep = ""), "')", sep = "")
-#   
+# 
 #   moviesDatabase <- dbGetQuery(conn, sqlString)
-#   
+# 
 #   listScores <- list()
 #   for(i in 1:length(moviesDatabase$title)){
 #     test2 <- find_by_title(moviesDatabase$title[i])
@@ -45,16 +45,25 @@ genres <- dbGetQuery(conn, getGenres)
 
 #Deze functie 
 
+getKaggleRatings <- function(genreKaggle = "Adventure"){
+  sqlStringKaggle <- "SELECT AVG(vote_average)
+                      FROM movieskaggle
+                      WHERE genres LIKE '%"
+  sqlStringKaggle <- paste(paste(sqlStringKaggle, genreKaggle, sep = ""), "%'", sep = "")
+  resultKaggle <- dbGetQuery(conn, sqlStringKaggle)
+  databaseNaam <- "Kaggle"
+  databaseScorekaggle <- data.frame(databaseNaam, resultKaggle)
+  return(databaseScorekaggle)
+}
 
 getMovieLensRatings <- function(genre = "Adventure"){
-  gemiddeldeScore <- 0
+  
   sqlString <- "SELECT AVG(gemiddeldeRating)
                 FROM averageratings a INNER JOIN moviesgenre mg ON a.movieId = mg.movieId
                 WHERE mg.genreId = (SELECT g.genreId
                 FROM genres g
                 WHERE g.genre = '"
   sqlString <- paste(paste(sqlString, genre, sep = ""), "')", sep = "")
-  
   movieLensrating <- dbGetQuery(conn, sqlString)
   gemiddeldeScore <- as.list(movieLensrating * 2)
   databaseNaam <- "Movielens"
@@ -75,7 +84,8 @@ ui <- fluidPage(
          selectInput(inputId = "genres_var",
                      label = "genres:",
                      choices = genres,
-                     selected = "Adventure"
+                     selected = "Adventure",
+                     selectize = TRUE
                      )
       ),
       
@@ -90,18 +100,18 @@ ui <- fluidPage(
 server <- function(input, output) {
    
   getTheRatings <- reactive({
-    #req(input$genres_var)
-    #genre <- get(input$genres)
-    #print(genre)
-    apiRating <- getAPIRatings()
-    databaseRating <- getMovieLensRatings()
-    test <- cbind(databaseRating, apiRating)
+    kaggleRating <- getKaggleRatings(input$genres_var)
+    colnames(kaggleRating)[2] <- "gemiddeldeScore"
+    movieLensRating <- getMovieLensRatings(input$genres_var)
+    colnames(movieLensRating)[2] <- "gemiddeldeScore"
+    plotData <- rbind(movieLensRating, kaggleRating)
+    return(plotData)
   })
   
   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      ggplot(data = getTheRatings(), aes(x =test$databaseNaam , y = test$gemiddeldeScore)) +
-        geom_bar(stat = "identity")+
+      plotData <- getTheRatings()
+      ggplot(data = plotData, aes(x =plotData$databaseNaam , y = plotData$gemiddeldeScore)) +
+        geom_bar(stat = "identity", fill = "#FF6666") +
         labs(x = "De database", y = "De gemiddelde gegeven score")
    })
 }

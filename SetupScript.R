@@ -69,7 +69,7 @@ for (i in movies$movieId) {
 
 createJointTableKaggle <- function(movieId){
   minChar <- 2
-  
+
   if (!('movieskagglegenre' %in% listTables)){
     createTable <- "CREATE TABLE movieskagglegenre(
     movieId INT,
@@ -82,26 +82,25 @@ createJointTableKaggle <- function(movieId){
                      WHERE genreId = '"
     sqlString2 <-paste(paste(sqlString2, genres$genreId[i], sep = ""), "'", sep = "")
     genreKaggle <- sqldf(sqlString2, stringsAsFactors = FALSE)
-      
+    
+    #print(genreKaggle %in% moviesKaggle$genres[movieId] == TRUE)
     if(genreKaggle %in% moviesKaggle$genres[movieId] == TRUE){
-        
+      
       sqlUpdateQuery <- "INSERT INTO moviesgenre (movieId, genreId)
         VALUES ('"
-        
+
       sqlUpdateQuery <- paste(paste(sqlUpdateQuery, as.character(movieId), sep = ""), "', '", sep = "")
-        
+
       sqlUpdateQuery <-paste(paste(sqlUpdateQuery, as.character(genres$genreId[i]), sep = ""), "')", sep = "")
-        
-      dbSendUpdate(conn = conn, statement = sqlUpdateQuery) 
+      print("sqlUpdateQuery")
+      dbSendUpdate(conn = conn, statement = sqlUpdateQuery)
     }
   }
 }
 
 
-
-
 for (i in moviesKaggle$id) {
-  createJointTableKaggle(moviesKaggle$id[i])
+  createJointTableKaggle(i)
 }
 
 movies$title<-paste0(substr(movies$title,1,nchar(as.character(movies$title))-6))
@@ -128,6 +127,7 @@ dbWriteTable(conn,name="Movies", value= movies, append=FALSE, row.names=FALSE, o
 dbWriteTable(conn,name="AverageRatings", value= gemiddeldeRating, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbWriteTable(conn,name="Genre", value= genres, append=FALSE, row.names=FALSE, overwrite=FALSE)
 dbWriteTable(conn,name="MoviesKaggle", value = moviesKraggleDB, append=FALSE, row.names=FALSE, overwrite=FALSE)
+dbWriteTable(conn,name="MoviesKaggleTest", value = moviesKaggle, append=FALSE, row.names=FALSE, overwrite=FALSE)
 
 
 
